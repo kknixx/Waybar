@@ -128,6 +128,11 @@ std::vector<WorkspaceStrip::TileData> WorkspaceStrip::collect() const {
   auto lock = gIPC->lockData();
 
   for (const auto& ws : gIPC->workspaces()) {
+    // One bar per output: like niri/workspaces, only show this bar's output so
+    // another display's active workspace is not highlighted here.
+    if (ws["output"].asString() != bar_.output->name) {
+      continue;
+    }
     TileData tile;
     tile.id = ws["id"].asUInt();
     tile.idx = ws["idx"].asUInt();
@@ -201,8 +206,12 @@ void WorkspaceStrip::rebuild(const std::vector<TileData>& tiles) {
     auto* button = Gtk::make_managed<Gtk::Button>();
     button->set_relief(Gtk::RELIEF_NONE);
     button->get_style_context()->add_class("ws-tile");
+    // "inactive" lets style.css target non-active tiles for the glass bevel,
+    // separately from the accent gradient on the active tile.
     if (tile.active) {
       button->get_style_context()->add_class("active");
+    } else {
+      button->get_style_context()->add_class("inactive");
     }
     // A provider attached to the module box does not reach child widgets on
     // GTK3, so attach the accent provider to each tile's own context.
